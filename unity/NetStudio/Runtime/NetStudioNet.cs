@@ -5,7 +5,7 @@ namespace Carp.NetStudio
 {
     /// <summary>
     /// The data a Net Studio prefab carries for its consumers: named markers, the mouth polygon and plane, and three display
-    /// controls (scooping pose, wetness, a disassembled layout). Filled in by the importer from net_manifest.json.
+    /// controls (scooping and lying poses, wetness, a disassembled layout). Filled in by the importer from net_manifest.json.
     /// This is an adapter surface, not gameplay: it never catches a fish, never simulates cloth or water, and has no
     /// colliders except an optional pickup capsule the importer adds when the preset asks for one.
     /// </summary>
@@ -46,6 +46,9 @@ namespace Carp.NetStudio
         public Marker[] markers;
         public SkinnedMeshRenderer[] bagRenderers;
         public string blendShape = "Scooping";
+        public string lyingBlendShape = "Lying";
+        [Tooltip("Net-local height of the ground when the net lies flat (lying = 1): under the spreader's rear boss and the butt cap.")]
+        public float lyingGroundY;
         public Section[] sections;
         public WetMaterial[] wetMaterials;
         public Renderer[] wetRenderers;
@@ -55,12 +58,15 @@ namespace Carp.NetStudio
         [HideInInspector] public float lodSizeAtBiasOne;
 
         [Range(0f, 1f)] public float scoop;
+        [Tooltip("The net laid flat on the ground, its bag collapsed (display pose; the frame stays where it is).")]
+        [Range(0f, 1f)] public float lying;
         [Range(0f, 1f)] public float wetness;
         [Tooltip("Display layout only (sections side by side, head off). Never a gameplay deployment; markers assume the assembled net.")]
         public bool disassembled;
 
         private MaterialPropertyBlock _block;
         private float _appliedScoop = -1f;
+        private float _appliedLying = -1f;
         private float _appliedWetness = -1f;
         private bool? _appliedLayout;
         private float _appliedBias = -1f;
@@ -68,6 +74,12 @@ namespace Carp.NetStudio
         public void SetScoop(float weight)
         {
             scoop = Mathf.Clamp01(weight);
+            Apply();
+        }
+
+        public void SetLying(float weight)
+        {
+            lying = Mathf.Clamp01(weight);
             Apply();
         }
 
@@ -123,6 +135,7 @@ namespace Carp.NetStudio
         private void OnEnable()
         {
             _appliedScoop = -1f;
+            _appliedLying = -1f;
             _appliedWetness = -1f;
             _appliedLayout = null;
             Apply();
@@ -135,7 +148,8 @@ namespace Carp.NetStudio
 
         private void Update()
         {
-            if (!Mathf.Approximately(scoop, _appliedScoop) || !Mathf.Approximately(wetness, _appliedWetness) || _appliedLayout != disassembled
+            if (!Mathf.Approximately(scoop, _appliedScoop) || !Mathf.Approximately(lying, _appliedLying)
+                || !Mathf.Approximately(wetness, _appliedWetness) || _appliedLayout != disassembled
                 || !Mathf.Approximately(QualitySettings.lodBias, _appliedBias))
             {
                 Apply();
@@ -158,6 +172,12 @@ namespace Carp.NetStudio
                     if (index >= 0)
                     {
                         bag.SetBlendShapeWeight(index, scoop * 100f);
+                    }
+
+                    var lyingIndex = bag.sharedMesh.GetBlendShapeIndex(lyingBlendShape);
+                    if (lyingIndex >= 0)
+                    {
+                        bag.SetBlendShapeWeight(lyingIndex, lying * 100f);
                     }
                 }
             }
@@ -183,6 +203,7 @@ namespace Carp.NetStudio
             }
 
             _appliedScoop = scoop;
+            _appliedLying = lying;
             _appliedWetness = wetness;
             _appliedLayout = disassembled;
         }

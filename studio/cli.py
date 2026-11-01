@@ -2,7 +2,7 @@
 
   python -m studio.cli list
   python -m studio.cli check <preset>                      validate a preset without Blender
-  python -m studio.cli generate <preset> [--quick] [--state deployed|scooping|wet|disassembled]
+  python -m studio.cli generate <preset> [--quick] [--state deployed|scooping|lying|wet|disassembled]
   python -m studio.cli all [--quick]                       every preset in presets/
   python -m studio.cli blender                             which Blender would be used
   python -m studio.cli export-unity <preset> <unity project> [--yes]
@@ -41,7 +41,7 @@ def main(argv=None):
     g = sub.add_parser("generate", help="build, validate, render and export a preset")
     g.add_argument("preset", help="preset name (see 'list') or a path to a preset .json")
     g.add_argument("--quick", action="store_true", help="LOD0 and one preview only")
-    g.add_argument("--state", default="deployed", choices=["deployed", "scooping", "wet", "disassembled"])
+    g.add_argument("--state", default="deployed", choices=["deployed", "scooping", "lying", "wet", "disassembled"])
     a = sub.add_parser("all", help="generate every preset")
     a.add_argument("--quick", action="store_true")
     e = sub.add_parser("export-unity", help="copy a generated net into a Unity project (Assets/NetStudio only)")

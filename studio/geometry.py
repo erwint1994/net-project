@@ -8,6 +8,10 @@ Unity frame (the export): X right, +Y up, +Z forward. to_unity() converts; the U
 import math
 
 INCH_M = 0.0254
+# Hardware sizes the shared maths needs too (blender/net/build.py builds them).
+SPREADER_BOSS_RADIUS_M = 0.0155
+BUTT_CAP_WALL_M = 0.0022
+TIP_CAP_WALL_M = 0.0028
 
 
 def inches_to_m(inches):
@@ -212,6 +216,11 @@ class NetGeometry:
             return [{"name": "Handle", "from_m": 0.0, "to_m": self.handle_len, "spigot_m": 0.0}]
         return [{"name": "HandleLower", "from_m": 0.0, "to_m": self.joint, "spigot_m": 0.0},
                 {"name": "HandleUpper", "from_m": self.joint, "to_m": self.handle_len, "spigot_m": self.spigot}]
+
+    def lying_ground_z(self):
+        """Where the ground is (build frame Z) when the net lies flat on it: under its thickest part, the spreader's rear
+        boss, the rubber butt cap or a tip cap, whichever reaches lowest."""
+        return -max(SPREADER_BOSS_RADIUS_M, self.handle_r0 + BUTT_CAP_WALL_M, self.arm_r1 + TIP_CAP_WALL_M)
 
     def markers(self):
         """Named points in the build frame. All poses and LODs share them (the bag bottom has one per pose)."""

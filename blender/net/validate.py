@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from studio.geometry import inches_to_m, point_in_polygon_xy, polygon_area_xy  # noqa: E402
 
 SHAPE_KEY = "Scooping"
+LYING_KEY = "Lying"
 
 
 class Report:
@@ -190,7 +191,24 @@ def validate_model(cfg, net, lods, markers, library, rep):
         keys = bag.data.shape_keys
         has_key = keys is not None and SHAPE_KEY in keys.key_blocks
         rep.add(f"LOD{lod} bag has the '{SHAPE_KEY}' blendshape", has_key, "present" if has_key else "missing")
+        weights = {k.name: k.value for k in keys.key_blocks[1:]} if keys else {}
+        rep.add(f"LOD{lod} bag rests in the deployed pose (blendshape weights 0)", all(w == 0 for w in weights.values()),
+                ", ".join(f"{n} {w:g}" for n, w in weights.items()))
         scoop = world_verts(bag, SHAPE_KEY)[:n_grid] if has_key else base
+        has_lying = keys is not None and LYING_KEY in keys.key_blocks
+        rep.add(f"LOD{lod} bag has the '{LYING_KEY}' blendshape", has_lying, "present" if has_lying else "missing")
+        if has_lying:
+            lying = world_verts(bag, LYING_KEY)
+            ground = g.lying_ground_z()
+            moved_l = max((a - b).length for a, b in zip(base[:n_rim], lying[:n_rim]))
+            rep.add(f"LOD{lod} rim stays attached in the lying pose", moved_l < 1e-5, f"moves {moved_l * 1000:.3f} mm")
+            low = min(v.z for v in lying)
+            high = max(v.z for v in lying[:n_grid])
+            rep.add(f"LOD{lod} lying bag rests on the ground, not through it", low >= ground - 1e-4 and high - ground < 0.06,
+                    f"{(low - ground) * 1000:.1f}-{(high - ground) * 1000:.1f} mm above the ground under the net")
+            reach = max(math.hypot(v.x - net.bag.centre[0], v.y - net.bag.centre[1]) for v in lying[:n_grid])
+            rep.add(f"LOD{lod} lying bag stays by the frame", reach < max(math.hypot(p[0] - net.bag.centre[0], p[1] - net.bag.centre[1])
+                                                                          for p in poly) + 0.1, f"{reach:.3f} m from the mouth centre")
         rim, rim_s = base[:n_rim], scoop[:n_rim]
         # Rim attachment: every rim vertex hangs just under an arm or the cord, the loop has no gaps, both poses agree.
         arms = [[Vector(p) for p in g.arm_polyline(s, 80)] for s in (1, -1)]
@@ -336,7 +354,7 @@ def validate_fbx(path, expected, rep, preview_names):
         rep.add(f"FBX {name}: UVs", len(o.data.uv_layers) > 0, f"{len(o.data.uv_layers)} UV layer(s)")
         if exp["shape_keys"]:
             keys = [k.name for k in o.data.shape_keys.key_blocks] if o.data.shape_keys else []
-            rep.add(f"FBX {name}: blendshape", SHAPE_KEY in keys, ", ".join(keys) or "none")
+            rep.add(f"FBX {name}: blendshapes", SHAPE_KEY in keys and LYING_KEY in keys, ", ".join(keys) or "none")
         loc = o.matrix_world.translation
         rep.add(f"FBX {name}: origin", (loc - Vector(exp["location"])).length < 1e-4, f"{tuple(round(c, 4) for c in loc)}")
     worst = 0.0

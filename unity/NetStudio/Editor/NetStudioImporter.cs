@@ -51,6 +51,8 @@ namespace Carp.NetStudio.Editor
             public float lodReferenceFov;
             public SectionEntry[] sections;
             public string blendshape;
+            public string lyingBlendshape;
+            public float lyingGroundY;
             public string[] bagObjects;
             public float defaultWetness;
             public bool pickupEnabled;
@@ -316,6 +318,8 @@ namespace Carp.NetStudio.Editor
                 net.mouthNormal = V(manifest.unity.mouthNormal);
                 net.mouthCentre = V(manifest.unity.markers.First(m => m.name == "Marker_MouthCentre").position);
                 net.blendShape = manifest.unity.blendshape;
+                net.lyingBlendShape = string.IsNullOrEmpty(manifest.unity.lyingBlendshape) ? "Lying" : manifest.unity.lyingBlendshape;
+                net.lyingGroundY = manifest.unity.lyingGroundY;
                 net.bagRenderers = manifest.unity.bagObjects.Select(n => Find(n).GetComponent<SkinnedMeshRenderer>()).ToArray();
                 for (var i = 0; i < net.bagRenderers.Length; i++)
                 {

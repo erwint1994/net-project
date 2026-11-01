@@ -5,7 +5,7 @@
 Full run: draw the texture maps (cached), build LOD0-2 and the markers, validate, export FBX / GLB / textures /
 manifest, save the .blend, render every preview, then re-import the FBX and read the GLB back to check them.
 Writes validation_report.json and exits 1 if a check failed.
---quick: LOD0 only and one three-quarter render in the chosen --state (deployed, scooping, wet, disassembled).
+--quick: LOD0 only and one three-quarter render in the chosen --state (deployed, scooping, lying, wet, disassembled).
 """
 import argparse
 import json
@@ -52,7 +52,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--cache", default=None)
     ap.add_argument("--quick", action="store_true")
-    ap.add_argument("--state", default="deployed", choices=["deployed", "scooping", "wet", "disassembled"])
+    ap.add_argument("--state", default="deployed", choices=["deployed", "scooping", "lying", "wet", "disassembled"])
     args = ap.parse_args(argv)
     with open(args.config, encoding="utf-8") as f:
         cfg = json.load(f)
@@ -80,6 +80,9 @@ def main():
             build.set_pose(lods[0], 1.0)
             for o in pr["fish"]:
                 o.hide_render = False
+        elif args.state == "lying":
+            build.set_pose(lods[0], 1.0, build.LYING_KEY)
+            scene.ground_at(env, net.geo.lying_ground_z())
         elif args.state == "wet":
             swap_materials(lods[0], materials.preview_materials(cfg, library, tex_folder, wetness=1.0, suffix="_Wet", clip=False))
         elif args.state == "disassembled":
@@ -131,6 +134,14 @@ def main():
     build.set_pose(lods[0], 0.0)
     scene.sheet(strip, os.path.join(prev, "pose_transition.png"), cols=3, scale=2)
 
+    # Laid flat on the ground (the bank net by the pod).
+    build.set_pose(lods[0], 1.0, build.LYING_KEY)
+    scene.ground_at(env, net.geo.lying_ground_z())
+    paths["lying"] = scene.render(sc, cams["three_quarter"], os.path.join(prev, "lying.png"), log)
+    scene.render(sc, cams["head"], os.path.join(prev, "lying_head.png"), log)
+    scene.ground_at(env, scene.GROUND_Z)
+    build.set_pose(lods[0], 0.0, build.LYING_KEY)
+
     # Wet and dry: the same views, dry (the preset's wetness) then fully wet.
     wet = materials.preview_materials(cfg, library, tex_folder, wetness=1.0, suffix="_Wet", clip=False)
     dry_paths = [paths["bag_detail"], paths["head"]]
@@ -169,8 +180,8 @@ def main():
     scene.sheet(dist, os.path.join(prev, "distance_sheet.png"), cols=3)
 
     sheet_views = [paths[v] for v in ("three_quarter", "side", "top", "front", "head", "spreader", "bag_detail",
-                                      "under", "hand_scale", "scooping", "disassembled")]
-    scene.sheet(sheet_views + [os.path.join(prev, "pose_050.png")], os.path.join(prev, "contact_sheet.png"), cols=4, scale=2)
+                                      "under", "hand_scale", "scooping", "disassembled", "lying")]
+    scene.sheet(sheet_views, os.path.join(prev, "contact_sheet.png"), cols=4, scale=2)
     log(f"render: done ({time.time() - t0:.1f}s)")
 
     validate.validate_fbx(fbx, expected, rep, PREVIEW_PREFIXES)

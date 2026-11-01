@@ -1,5 +1,5 @@
-"""Mesh building blocks: faces with per-corner UVs and material names, an optional second vertex position per vertex
-(the scooping blendshape), and tubes along polylines.
+"""Mesh building blocks: faces with per-corner UVs and material names, optional extra positions per vertex (one per
+blendshape: scooping, lying), and tubes along polylines.
 
 Metres, build frame (X right, Y forward along the handle, Z up). UVs are in metres; each material sets its own
 tiling, so netting, carbon and the grip all keep their real-world texture size.
@@ -18,9 +18,10 @@ class MeshBuilder:
         self.uvs = []
         self.mats = []
 
-    def vert(self, p, alt=None):
+    def vert(self, p, alts=()):
+        """alts: the vertex's position in each blendshape, in order (missing ones = the basis position)."""
         self.verts.append((p[0], p[1], p[2]))
-        self.alt.append(tuple(alt) if alt is not None else (p[0], p[1], p[2]))
+        self.alt.append(tuple(tuple(a) for a in alts))
         return len(self.verts) - 1
 
     def face(self, idx, uvs, mat):
@@ -36,18 +37,17 @@ class MeshBuilder:
         self.uvs.extend(other.uvs)
         self.mats.extend(other.mats)
 
-    @property
-    def has_alt(self):
-        return any(a != v for a, v in zip(self.alt, self.verts))
+    def alt_positions(self, k):
+        return [a[k] if k < len(a) else v for a, v in zip(self.alt, self.verts)]
 
     def triangle_count(self):
         return sum(len(f) - 2 for f in self.faces)
 
-    def to_object(self, name, materials, collection, origin=(0.0, 0.0, 0.0), smooth=True, shape_key=None,
+    def to_object(self, name, materials, collection, origin=(0.0, 0.0, 0.0), smooth=True, shape_keys=(),
                   sharp_angle_deg=50.0):
         """A mesh object whose origin sits at `origin` (vertices are stored relative to it).
 
-        shape_key: name of a blendshape built from the alternative positions (only if any differ)."""
+        shape_keys: blendshape names, in the order of the vertices' extra positions."""
         o = Vector(origin)
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata([tuple(Vector(v) - o) for v in self.verts], [], self.faces)
@@ -69,10 +69,13 @@ class MeshBuilder:
         obj = bpy.data.objects.new(name, mesh)
         obj.location = o
         collection.objects.link(obj)
-        if shape_key and self.has_alt:
+        if shape_keys:
             obj.shape_key_add(name="Basis", from_mix=False)
-            key = obj.shape_key_add(name=shape_key, from_mix=False)
-            key.data.foreach_set("co", [c for a in self.alt for c in (Vector(a) - o)])
+            for k, key_name in enumerate(shape_keys):
+                key = obj.shape_key_add(name=key_name, from_mix=False)
+                key.data.foreach_set("co", [c for a in self.alt_positions(k) for c in (Vector(a) - o)])
+                # New keys start at full weight in Blender 5; the neutral (deployed) pose is every key at 0.
+                key.value = 0.0
             mesh.update()
         return obj
 
@@ -87,13 +90,12 @@ def _frame(t, ref):
     return side, up
 
 
-def tube(mb, pts, radii, sides, mat, caps=(True, True), ref=Vector((0, 0, 1)), v0=0.0, alt_pts=None, cap_dome=0.0):
+def tube(mb, pts, radii, sides, mat, caps=(True, True), ref=Vector((0, 0, 1)), v0=0.0, cap_dome=0.0):
     """A tube along pts with a radius per point. UV: u round the circumference, v along the length (metres).
 
-    caps: close the start / end with a flat (or domed, cap_dome = height in m) fan. alt_pts: blendshape positions."""
+    caps: close the start / end with a flat (or domed, cap_dome = height in m) fan."""
     n = len(pts)
     pts = [Vector(p) for p in pts]
-    alt_pts = [Vector(p) for p in alt_pts] if alt_pts is not None else pts
     if isinstance(radii, (int, float)):
         radii = [radii] * n
     tangents = []
@@ -110,7 +112,7 @@ def tube(mb, pts, radii, sides, mat, caps=(True, True), ref=Vector((0, 0, 1)), v
         for k in range(sides + 1):
             a = 2 * math.pi * k / sides
             off = (side * math.cos(a) + up * math.sin(a)) * radii[i]
-            ring.append((mb.vert(pts[i] + off, alt_pts[i] + off) if k < sides else None, (2 * math.pi * radii[i] * k / sides, v)))
+            ring.append((mb.vert(pts[i] + off) if k < sides else None, (2 * math.pi * radii[i] * k / sides, v)))
         ring[sides] = (ring[0][0], ring[sides][1])
         rings.append(ring)
     for i in range(n - 1):
@@ -123,7 +125,7 @@ def tube(mb, pts, radii, sides, mat, caps=(True, True), ref=Vector((0, 0, 1)), v
             continue
         t = tangents[idx] * (-1 if end == 0 else 1)
         centre = pts[idx] + t * cap_dome
-        c = mb.vert(centre, alt_pts[idx] + t * cap_dome)
+        c = mb.vert(centre)
         ring = rings[idx]
         side, up = _frame(tangents[idx], ref)
         for k in range(sides):

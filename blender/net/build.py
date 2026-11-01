@@ -19,9 +19,11 @@ from .meshkit import MeshBuilder, lathe, tube
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from studio.bagshape import BagShape  # noqa: E402
-from studio.geometry import NetGeometry  # noqa: E402
+from studio.geometry import BUTT_CAP_WALL_M, SPREADER_BOSS_RADIUS_M, TIP_CAP_WALL_M, NetGeometry  # noqa: E402
 
 SHAPE_KEY = "Scooping"
+LYING_KEY = "Lying"
+SHAPE_KEYS = (SHAPE_KEY, LYING_KEY)
 CAP_LEN = 0.026
 INSERT_LEN = 0.03
 THREAD_LEN = 0.016
@@ -38,6 +40,7 @@ class Net:
         self.geo = NetGeometry(cfg)
         self.bag = BagShape(self.geo, cfg["bag"], cfg["seed"], "deployed")
         self.scoop = BagShape(self.geo, cfg["bag"], cfg["seed"], "scooping")
+        self.lying = BagShape(self.geo, cfg["bag"], cfg["seed"], "lying")
 
     def part_names(self):
         return [s["name"] for s in self.geo.handle_sections()] + ["Head", "NetBag"]
@@ -64,7 +67,7 @@ def build_handle_section(net, section, lod, mb):
     r = g.handle_radius
     top_section = abs(y1 - g.handle_len) < 1e-9
     if y0 == 0.0:
-        r0 = r(0) + 0.0022
+        r0 = r(0) + BUTT_CAP_WALL_M
         prof = [(0.0, 0.0), (0.0, r0 * 0.55), (0.003, r0 * 0.92), (0.008, r0), (CAP_LEN - 0.003, r0), (CAP_LEN, r(CAP_LEN) + 0.0004)]
         if lod == 2:
             prof = [(0.0, 0.0), (0.0, r0 * 0.7), (0.006, r0), (CAP_LEN, r0)]
@@ -142,7 +145,7 @@ def build_head(net, lod, mb):
     P = Vector(g.pivot)
     Y = Vector((0, 1, 0))
     # Rear boss: the threaded socket the handle screws into.
-    rb = 0.0155
+    rb = SPREADER_BOSS_RADIUS_M
     lathe(mb, (0, g.handle_len, 0), Y,
           [(0.0, THREAD_R + 0.0004), (0.0, rb - 0.0015), (0.0015, rb), (BOSS_LEN, rb)], max(6, sides), "NT_Plastic")
     # Block body round the pivot.
@@ -165,7 +168,7 @@ def build_head(net, lod, mb):
         # Tip cap: plastic end with the cord running through it.
         corner = Vector(g.corner_right if side > 0 else g.corner_left)
         t = (corner - Vector(g.arm_point(side, 1 - 0.01 / g.L))).normalized()
-        rc = g.arm_r1 + 0.0028
+        rc = g.arm_r1 + TIP_CAP_WALL_M
         prof = [(-0.032, g.arm_r1 + 0.0004), (-0.029, rc), (0.002, rc), (0.006, rc * 0.8), (0.008, 0.0)]
         if lod == 2:
             prof = [(-0.032, rc), (0.004, rc), (0.008, 0.0)]
@@ -193,14 +196,15 @@ def _orient(mb, start, end, outward):
 
 
 def build_bag(net, lod, mb):
-    g, bag, scoop = net.geo, net.bag, net.scoop
+    g, bag, scoop, lying = net.geo, net.bag, net.scoop, net.lying
     q, bc = net.cfg["quality"], net.cfg["bag"]
     n_rim, rows = q["lod_rim_segments"][lod], q["lod_bag_rows"][lod]
     us = bag.rim.sample_u(n_rim)
     grid = bag.grid(us, rows)
     grid_s = scoop.grid(us, rows)
-    ids = [[mb.vert(grid[i][j], grid_s[i][j]) for j in range(n_rim)] for i in range(rows)]
-    bottom = mb.vert(bag.bottom_point(), scoop.bottom_point())
+    grid_l = lying.grid(us, rows)
+    ids = [[mb.vert(grid[i][j], (grid_s[i][j], grid_l[i][j])) for j in range(n_rim)] for i in range(rows)]
+    bottom = mb.vert(bag.bottom_point(), (scoop.bottom_point(), lying.bottom_point()))
     # UVs in metres from the deployed pose: u along each row, v down each column.
     U = []
     for i in range(rows):
@@ -240,12 +244,12 @@ def build_bag(net, lod, mb):
         for k in range(steps):
             t = k / steps * (rows - 1) / rows
             pair = []
-            for shape in (bag, scoop):
+            for shape in (bag, scoop, lying):
                 p, n = Vector(shape.point(u, t)), Vector(shape.normal(u, t))
                 tu = (Vector(shape.point(u + 1e-3, t)) - Vector(shape.point(u - 1e-3, t))).normalized()
                 pair.append((p + n * lift - tu * width / 2, p + n * lift + tu * width / 2))
-            a = mb.vert(pair[0][0], pair[1][0])
-            b = mb.vert(pair[0][1], pair[1][1])
+            a = mb.vert(pair[0][0], (pair[1][0], pair[2][0]))
+            b = mb.vert(pair[0][1], (pair[1][1], pair[2][1]))
             if prev:
                 v_prev = v
                 v += (Vector(mb.verts[a]) - Vector(mb.verts[prev[0]])).length
@@ -320,7 +324,7 @@ def build_lod(net, lod, mats, collection, root):
     objs.append(mb.to_object(f"LOD{lod}_Head", mats, collection, origins["Head"]))
     mb = MeshBuilder()
     build_bag(net, lod, mb)
-    bag = mb.to_object(f"LOD{lod}_NetBag", mats, collection, origins["NetBag"], shape_key=SHAPE_KEY, sharp_angle_deg=80)
+    bag = mb.to_object(f"LOD{lod}_NetBag", mats, collection, origins["NetBag"], shape_keys=SHAPE_KEYS, sharp_angle_deg=80)
     unwrap_bag(bag, net.cfg["quality"]["lod_rim_segments"][lod], net.cfg["quality"]["lod_bag_rows"][lod])
     objs.append(bag)
     for o in objs:
@@ -355,9 +359,9 @@ def build_all(cfg, mats, collection, lods=(0, 1, 2)):
     return net, root, built, markers
 
 
-def set_pose(objs, weight):
-    """0 = deployed (empty), 1 = scooping."""
+def set_pose(objs, weight, key=SHAPE_KEY):
+    """Blendshape weight 0..1 on every bag: Scooping (0 = deployed, empty) or Lying (flat on the ground)."""
     for o in objs:
         keys = o.data.shape_keys
-        if keys and SHAPE_KEY in keys.key_blocks:
-            keys.key_blocks[SHAPE_KEY].value = weight
+        if keys and key in keys.key_blocks:
+            keys.key_blocks[key].value = weight

@@ -9,7 +9,9 @@ close in a rounded bottom at depth D below the mouth plane. Soft vertical folds 
 
 This is a pose, not a simulation: no cloth, water drag or load. The scooping pose uses the same function with
 other parameters (deeper, bottom drawn back towards the handle, fuller, fewer folds), so the two share topology
-and the rim never moves between them.
+and the rim never moves between them. The lying pose is the net laid flat on the ground: the bag drops from the rim
+to just above the ground and gathers in a loose, folded heap a little forward of the mouth's centre, its layers
+stacked a few millimetres apart.
 """
 import math
 import random
@@ -21,6 +23,10 @@ SLEEVE_CLEARANCE_M = 0.0015
 # What changes from the deployed (empty) pose to the scooping pose. Multipliers on the preset's bag values, plus the
 # bottom's shift towards the handle as a fraction of the mouth depth.
 SCOOP = {"depth_scale": 1.12, "bulge_add": 0.14, "fold_scale": 0.35, "round_end_scale": 0.7, "bottom_back_frac": 0.16}
+
+# The lying pose: how far the heap gathers in towards its centre (1 = to a point), how far its centre sits forward of
+# the mouth's centre (fraction of the mouth depth), the gap above the ground, the stacking of layers and the folds.
+LYING = {"gather": 0.82, "spill_frac": 0.12, "clearance_m": 0.0015, "stack_m": 0.025, "fold_scale": 1.5, "drop_t": 0.08}
 
 
 def smoothstep(lo, hi, x):
@@ -125,9 +131,13 @@ class BagShape:
             self.folds *= SCOOP["fold_scale"]
             self.round_end *= SCOOP["round_end_scale"]
             by -= SCOOP["bottom_back_frac"] * geo.mouth_depth
+        elif pose == "lying":
+            self.ground = geo.lying_ground_z()
+            self.heap = (cx + bx, cy + by + LYING["spill_frac"] * geo.mouth_depth)
+            self.depth = -self._lying_z(1.0, 0.0)
         elif pose != "deployed":
             raise ValueError(f"unknown pose '{pose}'")
-        self.bottom = (cx + bx, cy + by)
+        self.bottom = self.heap if pose == "lying" else (cx + bx, cy + by)
         self.r_eq = math.sqrt(abs(geo.mouth_area()) / math.pi)
         rng = random.Random(int(seed))
         # Fold waves: integer frequencies so they wrap round the rim. Same seed for both poses (same folds, scaled).
@@ -138,10 +148,30 @@ class BagShape:
     def _fold(self, u):
         return sum(a * math.sin(2 * math.pi * f * u + p) for f, a, p in self.waves)
 
+    def _lying_z(self, t, fold):
+        return self.ground + LYING["clearance_m"] + LYING["stack_m"] * t + 0.5 * LYING["stack_m"] * t * (1 - t) * (0.5 + 0.5 * fold)
+
+    def _point_lying(self, u, r, t):
+        hx, hy = self.heap
+        if t >= 1.0:
+            return (hx, hy, self._lying_z(1.0, 0.0))
+        k = LYING["gather"] * (1 - (1 - t) ** 1.5)
+        x, y = r[0] + (hx - r[0]) * k, r[1] + (hy - r[1]) * k
+        dx, dy = x - hx, y - hy
+        dist = math.hypot(dx, dy) or 1e-9
+        f = self._fold(u)
+        push = self.folds * LYING["fold_scale"] * (t ** 0.6) * (1 - t) * f
+        x, y = x + dx / dist * push, y + dy / dist * push
+        w = smoothstep(0.0, LYING["drop_t"], t)
+        z = r[2] * (1 - w) + self._lying_z(t, self._fold(u + 0.21)) * w
+        return (x, y, z)
+
     def point(self, u, t):
         r = self.rim.at(u)
         if t <= 0.0:
             return r
+        if self.pose == "lying":
+            return self._point_lying(u, r, t)
         cx, cy = self.centre
         if t >= 1.0:
             return (self.bottom[0], self.bottom[1], -self.depth)
@@ -170,6 +200,8 @@ class BagShape:
         return (ox + ux * radial, oy + uy * radial, z)
 
     def bottom_point(self):
+        if self.pose == "lying":
+            return self.point(0.0, 1.0)
         return (self.bottom[0], self.bottom[1], -self.depth)
 
     def normal(self, u, t, eps=1e-3):

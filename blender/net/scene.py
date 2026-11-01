@@ -135,6 +135,11 @@ def environment(scene, cfg):
     return {"ground": ground, "water": water}
 
 
+def ground_at(env, z):
+    """Move the grass to height z (the lying pose rests the net on it)."""
+    env["ground"].location.z = z - GROUND_Z
+
+
 def backdrop(env, kind):
     """bank: grass under the net; water: water under it; sky: neither (the camera looks up)."""
     env["ground"].hide_render = kind != "bank"

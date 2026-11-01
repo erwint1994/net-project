@@ -126,7 +126,7 @@ class App:
         act = ttk.Frame(left)
         act.pack(fill="x", pady=4)
         ttk.Label(act, text="Quick state").pack(side="left")
-        self.state_box = ttk.Combobox(act, state="readonly", width=12, values=["deployed", "scooping", "wet", "disassembled"])
+        self.state_box = ttk.Combobox(act, state="readonly", width=12, values=["deployed", "scooping", "lying", "wet", "disassembled"])
         self.state_box.set("deployed")
         self.state_box.pack(side="left", padx=4)
         ttk.Button(act, text="Quick preview", command=lambda: self.run(True)).pack(side="left", padx=2)

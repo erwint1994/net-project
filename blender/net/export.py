@@ -14,7 +14,7 @@ import sys
 
 import bpy
 
-from .build import SHAPE_KEY
+from .build import LYING_KEY, SHAPE_KEY
 from .materials import NET, wet_values
 from .validate import tri_count
 
@@ -182,9 +182,13 @@ def export_all(cfg, net, root, lods, markers, library, tex_folder, out_dir, log)
         "display_states": {"note": "disassembled is a display layout only, never a gameplay deployment; "
                                    "markers are valid for the assembled net",
                            **states},
-        "pose": {"mechanism": "blendshape", "blendshape": SHAPE_KEY,
+        "pose": {"mechanism": "blendshape", "blendshape": SHAPE_KEY, "lying_blendshape": LYING_KEY,
                  "objects": [f"LOD{k}_NetBag" for k in sorted(lods)],
-                 "states": {"deployed": 0.0, "scooping": 100.0},
+                 "states": {"deployed": {SHAPE_KEY: 0.0, LYING_KEY: 0.0}, "scooping": {SHAPE_KEY: 100.0, LYING_KEY: 0.0},
+                            "lying": {SHAPE_KEY: 0.0, LYING_KEY: 100.0}},
+                 "lying_ground_y": round(g.lying_ground_z(), 5),
+                 "lying_note": "laid flat (net frame unturned, mouth facing +Y): put the ground at lying_ground_y, "
+                               "under the spreader's rear boss and the butt cap",
                  "note": "display poses only: no cloth, water drag, load or capture simulation; the rim never moves"},
         "materials": materials,
         "net": {"hole_mm": cfg["bag"]["hole_mm"], "strand_mm": cfg["bag"]["strand_mm"],
@@ -227,6 +231,8 @@ def export_all(cfg, net, root, lods, markers, library, tex_folder, out_dir, log)
                        for part in ("Head", "NetBag")],
         "lodReferenceFov": LOD_REFERENCE_FOV_DEG,
         "blendshape": SHAPE_KEY,
+        "lyingBlendshape": LYING_KEY,
+        "lyingGroundY": round(g.lying_ground_z(), 5),
         "bagObjects": [f"LOD{k}_NetBag" for k in sorted(lods)],
         "defaultWetness": m["wetness"],
         "pickupEnabled": bool(pickup),

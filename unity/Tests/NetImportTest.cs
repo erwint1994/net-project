@@ -186,6 +186,21 @@ public static class NetImportTest
         var sc = BagLow(n.bagRenderers[0]);
         Check(Mathf.Abs(-sc - manifest.head.depth.scooping_m) < 0.03f && sc < dep, $"scooping pose: bag {-dep:0.000} m -> {-sc:0.000} m deep");
         n.SetScoop(0f);
+        n.SetLying(1f);
+        float BagHigh(SkinnedMeshRenderer s)
+        {
+            var baked = new Mesh();
+            s.BakeMesh(baked, true);
+            var high = baked.vertices.Max(v => inst.transform.InverseTransformPoint(s.transform.TransformPoint(v)).y);
+            UnityEngine.Object.DestroyImmediate(baked);
+            return high;
+        }
+        var lyLow = BagLow(n.bagRenderers[0]);
+        var lyHigh = BagHigh(n.bagRenderers[0]);
+        Check(n.lyingGroundY < -0.005f && lyLow >= n.lyingGroundY - 0.001f && lyHigh - n.lyingGroundY < 0.07f,
+            $"lying pose: bag flat on the ground ({(lyLow - n.lyingGroundY) * 1000f:0}-{(lyHigh - n.lyingGroundY) * 1000f:0} mm above it)");
+        n.SetLying(0f);
+        Check(Mathf.Abs(BagLow(n.bagRenderers[0]) - dep) < 0.005f, "back to the deployed pose");
         n.SetWetness(1f);
         var bagR = n.bagRenderers[0];
         var tint = n.AppliedTint(bagR, Array.FindIndex(bagR.sharedMaterials, m => m.name == "NT_Net"));
