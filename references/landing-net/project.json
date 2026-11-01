@@ -1,0 +1,9 @@
+{
+  "name": "Landing Net Studio",
+  "type": "standalone_blender_asset_generator",
+  "blender_version": "5.2.3",
+  "target": "Unity",
+  "status": "starter_specification",
+  "lods": 3,
+  "default_texture_size": 2048
+}

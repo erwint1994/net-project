@@ -1,0 +1,13 @@
+{
+  "id": "net_46_two_piece",
+  "name": "46-inch triangle net, two-piece handle",
+  "head": {
+    "arm_length_in": 46
+  },
+  "handle": {
+    "sections": 2
+  },
+  "bag": {
+    "depth_m": 0.95
+  }
+}

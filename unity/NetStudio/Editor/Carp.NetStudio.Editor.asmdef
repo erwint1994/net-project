@@ -1,0 +1,14 @@
+{
+    "name": "Carp.NetStudio.Editor",
+    "rootNamespace": "Carp.NetStudio.Editor",
+    "references": ["Carp.NetStudio"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

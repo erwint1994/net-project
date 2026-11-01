@@ -1,0 +1,10 @@
+{
+  "id": "net_42_two_piece",
+  "name": "42-inch triangle net, two-piece handle",
+  "head": {
+    "arm_length_in": 42
+  },
+  "handle": {
+    "sections": 2
+  }
+}

@@ -1,0 +1,10 @@
+# Portable Blender and downloads (setup_blender.ps1 recreates them)
+_vendor/
+# Generated models, previews, texture cache, Unity shots
+output/
+# Throwaway Unity project used to test the importer
+_unitytest/
+_unitytest-create.log
+__pycache__/
+*.pyc
+*.blend1

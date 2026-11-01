@@ -1,0 +1,13 @@
+{
+  "id": "net_46_one_piece",
+  "name": "46-inch triangle net, one-piece handle",
+  "head": {
+    "arm_length_in": 46
+  },
+  "handle": {
+    "sections": 1
+  },
+  "bag": {
+    "depth_m": 0.95
+  }
+}

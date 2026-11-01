@@ -1,0 +1,76 @@
+{
+  "id": "net",
+  "name": "Landing net",
+  "head": {
+    "arm_length_in": 42,
+    "opening_angle_deg": 90,
+    "arm_bow_m": 0.016,
+    "arm_base_diameter_mm": 12.0,
+    "arm_tip_diameter_mm": 8.0,
+    "cord_diameter_mm": 4.5,
+    "pivot_from_handle_top_m": 0.045,
+    "socket_length_m": 0.07
+  },
+  "handle": {
+    "length_m": 1.8,
+    "sections": 1,
+    "joint_from_butt_m": null,
+    "spigot_overlap_m": 0.14,
+    "butt_diameter_mm": 26.0,
+    "top_diameter_mm": 21.0,
+    "grip_start_m": 0.03,
+    "grip_length_m": 0.36,
+    "front_grip_from_butt_m": 1.05,
+    "grip_pattern": "diamond"
+  },
+  "bag": {
+    "depth_m": 0.9,
+    "bulge": 0.08,
+    "fold_m": 0.014,
+    "round_end": 0.6,
+    "bottom_offset_m": [0.0, 0.0],
+    "hole_mm": 6.0,
+    "strand_mm": 1.1,
+    "hole_orientation": "diamond",
+    "knot": "knotless",
+    "seams": true,
+    "arm_sleeve": true
+  },
+  "material": {
+    "net_hex": "#2d3324",
+    "carbon_hex": "#17181a",
+    "grip_hex": "#1b1c1c",
+    "cord_hex": "#22261c",
+    "fitting_hex": "#121315",
+    "binding_hex": "#262b1f",
+    "wetness": 0.0,
+    "carbon_roughness": 0.5,
+    "net_roughness": 0.78,
+    "alpha_cutoff": 0.5,
+    "wet_base_tint": 0.62,
+    "wet_smoothness_gain": 1.0
+  },
+  "seed": 7,
+  "quality": {
+    "texture_resolution": 1024,
+    "triangle_ceilings": [18000, 7000, 2000],
+    "lod_rim_segments": [128, 56, 24],
+    "lod_bag_rows": [24, 12, 6],
+    "lod_tube_sides": [16, 8, 5]
+  },
+  "render": {
+    "resolution": [1280, 720],
+    "quick_resolution": [960, 540],
+    "samples": 48,
+    "quick_samples": 16,
+    "sun_elevation_deg": 38,
+    "sun_azimuth_deg": 40,
+    "sun_strength": 4.0,
+    "sky_strength": 0.12,
+    "exposure": 0.0
+  },
+  "export": {
+    "glb": true,
+    "pickup_proxy": false
+  }
+}
