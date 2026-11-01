@@ -74,8 +74,10 @@ Output paths: `output\<id>\` (export, previews, .blend, report, log), `output\_t
 
 ## Not done / known limits
 
-- **Not imported into the game.** By design nothing in `C:\repos\carp` was changed. [ADAPTER.md](ADAPTER.md) lays out
-  how to wire it in (placement in the water, a lying pose, hands, capture metadata).
+- **In the game since 2026-11-01 (Erwin: "yes replace it"):** `net_42_one_piece` is the net in the water, look id
+  `landing_net_42` (`StudioLandingNet` in the carp repo, `StudioLandingNetTests`), imported with Carp → Studios → Import
+  Landing Net. Adapter steps 1-2 are done; the lying pose, hands and a capture rule using the mouth polygon are not
+  ([ADAPTER.md](ADAPTER.md)). Not yet checked in play.
 - **No collapsed or lying bag pose** for the net on the bank. It's the next pose to add, as a second blendshape.
 - **Compact folding nets** aren't started (deferred by the spec). Taking a handle section off doesn't fold a rigid head,
   and the studio doesn't pretend it does.

@@ -1,6 +1,8 @@
 # Adapter plan: Net Studio nets in the carp game
 
-Status: plan only. Nothing in `C:\repos\carp` was changed. The game's code was read on 2026-11-01 to define this.
+Status (2026-11-01): steps 1 and 2 are done in the carp repo. `StudioGearSetup.ImportLandingNet` imports
+`net_42_one_piece` as `landing_net_42`, and `LandingNetVisual` uses `StudioLandingNet` when the library has it (the
+code-built net is the fallback). Steps 3-6 are still plans. The game's code was read on 2026-11-01 to define this.
 
 ## What the game has today (read-only findings)
 
