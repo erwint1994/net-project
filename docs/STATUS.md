@@ -10,7 +10,7 @@ portable Blender 5.2.3, Unity 6000.4.10f1 with URP 17.4.0, RTX 4060).
 | Presets | `net_42_one_piece`, `net_42_two_piece`, `net_46_one_piece`, `net_46_two_piece`, all from shared parts |
 | Geometry | tapered twill-carbon arms (bowed, in sockets with anodised ferrules), moulded spreader block with threaded rear boss, plastic tip caps, braided rim cord, carbon handle with a knurled rubber grip, rubber butt cap and a threaded insert; two-piece: joint ferrule collar, hidden spigot, upper-section ring |
 | Bag | hanging, rounded, soft folds, attached all round the rim, netting wrapped over the arms and cord, back seam tape; UVs unwrapped for real twine length (median 1.000, 90 % of edges within 0.92-1.20) |
-| Netting | 6 mm knotless diamond holes, 1.1 mm twine (configurable; square holes and knots optional), alpha-clipped and double-sided in Blender, GLB and Unity |
+| Netting | 9 mm knotless diamond holes, 1.5 mm twine (configurable; square holes and knots optional), alpha-clipped and double-sided in Blender, GLB and Unity |
 | Poses | deployed (empty) and scooping as a blendshape on every LOD, with the preview transition; display-only fish and hand proxies, never exported |
 | States | wet / dry (material parameters), disassembled display layout (sections side by side, head off) |
 | LODs | about 9.9k / 2.5k / 0.8k triangles (one-piece) and 10.3k / 2.7k / 0.9k (two-piece), against ceilings of 18k / 7k / 2k |
@@ -62,7 +62,7 @@ Output paths: `output\<id>\` (export, previews, .blend, report, log), `output\_t
 ## Decisions taken (and why)
 
 - **"42 inch" = each arm, spreader pivot to corner, as a straight line.** The bowed arm is 0.6 mm longer along its curve.
-- **Default 90° opening, 1.80 m handle, 0.90 m bag (0.95 m for the 46"), 6 mm holes:** proposed proportions, labelled
+- **Default 90° opening, 1.80 m handle, 0.90 m bag (0.95 m for the 46"), 9 mm holes with 1.5 mm twine:** proposed proportions, labelled
   as such in the manifest. The arm bow (16 mm) makes the sockets about 99° apart, as on real nets whose cord pulls the
   arm tips in.
 - **The scooping pose** deepens the bag by 12 % and draws its bottom back towards the handle by 16 % of the mouth depth:
@@ -70,15 +70,24 @@ Output paths: `output\<id>\` (export, previews, .blend, report, log), `output\_t
 - **Netting at distance:** alpha clip close up, alpha-blended haze from LOD1 (2 m) on, with the LOD hand-over fixed in
   metres. Measured in [NETTING_DISTANCE.md](NETTING_DISTANCE.md); it's the one deliberate exception to "clip by default".
 - **Alpha-to-coverage off:** the game renders without MSAA, and with MSAA A2C thinned the twine.
+- **9 mm mesh, 1.5 mm twine (was 6 / 1.1 mm), 2026-11-01:** after Erwin's playtest ("doesn't really look like a net")
+  the fine micromesh read as a smooth grey veil from a couple of metres. 9 mm is a common carp-net mesh and its twine
+  stays visible about half as far again; coverage hardly changes (26 % vs 28 %), so the distance behaviour holds (Unity: 28-34 %
+  of the bag at 0.8-60 m).
+- **Far netting without "preserve specular":** URP's default added full-strength highlights to the blended netting
+  whatever its alpha, so it showed as a glossy grey sheet in play. The importer turns it off.
+- **Lying pose** (the net by the pod): the rim stays on the arms and the bag gathers into a heap a little forward of the
+  mouth's centre, pleating back on itself so it lies two or three layers deep in wandering folds, 5-35 mm above the
+  ground. A single flat layer read as a faint sheet.
 - **Wet:** base colour × 0.62 and smoothness up to × 2 (capped per material). Subtle by design: wet dark netting mostly gains sheen.
 
 ## Not done / known limits
 
 - **In the game since 2026-11-01 (Erwin: "yes replace it"):** `net_42_one_piece` is the net in the water, look id
   `landing_net_42` (`StudioLandingNet` in the carp repo, `StudioLandingNetTests`), imported with Carp → Studios → Import
-  Landing Net. Adapter steps 1-2 are done; the lying pose, hands and a capture rule using the mouth polygon are not
+  Landing Net, and since the second playtest also laid flat by the pod in the lying pose (`StudioLandingNet.TryLay`).
+  Adapter steps 1-3 are done; hands and a capture rule using the mouth polygon are not
   ([ADAPTER.md](ADAPTER.md)). Not yet checked in play.
-- **No collapsed or lying bag pose** for the net on the bank. It's the next pose to add, as a second blendshape.
 - **Compact folding nets** aren't started (deferred by the spec). Taking a handle section off doesn't fold a rigid head,
   and the studio doesn't pretend it does.
 - **Close-up moiré** (about 1-2 m) with MSAA off, and **no bag shadow beyond 2 m** (the blended far bags cast none).

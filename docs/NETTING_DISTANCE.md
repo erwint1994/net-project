@@ -1,6 +1,6 @@
 # Netting at distance: what was measured and what was chosen
 
-Netting is 28 % twine and 72 % hole (6 mm holes, 1.1 mm twine). Seen through both walls of the bag, about 48 % of
+Netting was 28 % twine and 72 % hole when this was measured (6 mm holes, 1.1 mm twine; the default is now 9 mm and 1.5 mm, 26 % twine, and the as-shipped check gives 28-34 % at 0.8-60 m). Seen through both walls of the bag, about 48 % of
 the silhouette should look covered. Once the twine is thinner than a pixel, a real net reads as an even dark veil
 of that density. A game net must neither **vanish** nor turn into a **solid black bag**.
 

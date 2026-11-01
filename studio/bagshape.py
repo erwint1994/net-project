@@ -25,8 +25,11 @@ SLEEVE_CLEARANCE_M = 0.0015
 SCOOP = {"depth_scale": 1.12, "bulge_add": 0.14, "fold_scale": 0.35, "round_end_scale": 0.7, "bottom_back_frac": 0.16}
 
 # The lying pose: how far the heap gathers in towards its centre (1 = to a point), how far its centre sits forward of
-# the mouth's centre (fraction of the mouth depth), the gap above the ground, the stacking of layers and the folds.
-LYING = {"gather": 0.82, "spill_frac": 0.12, "clearance_m": 0.0015, "stack_m": 0.025, "fold_scale": 1.5, "drop_t": 0.08}
+# the mouth's centre (fraction of the mouth depth), the gap above the ground, the stacking of layers, the sideways folds
+# and the height of the ridges they throw up, and the pleats: going down the bag the rings gather in and fold back out
+# again, so the collapsed netting lies two or three layers deep, as a real bag does (a single layer read as a faint sheet).
+LYING = {"gather": 0.88, "spill_frac": 0.12, "clearance_m": 0.0015, "stack_m": 0.03, "fold_scale": 3.0, "ridge_m": 0.03,
+         "drop_t": 0.08, "pleats": 2.5, "pleat_depth": 0.22}
 
 
 def smoothstep(lo, hi, x):
@@ -144,26 +147,43 @@ class BagShape:
         self.waves = [(rng.randint(5, 13), rng.uniform(0.4, 1.0), rng.uniform(0, 2 * math.pi)) for _ in range(5)]
         norm = sum(a for _, a, _ in self.waves)
         self.waves = [(f, a / norm, p) for f, a, p in self.waves]
+        # Tighter creases for the bag lying collapsed (12-18 cm apart round the rim), from their own seeded stream.
+        crease = random.Random(int(seed) + 101)
+        self.creases = [(crease.randint(20, 30), crease.uniform(0.5, 1.0), crease.uniform(0, 2 * math.pi)) for _ in range(4)]
+        norm = sum(a for _, a, _ in self.creases)
+        self.creases = [(f, a / norm, p) for f, a, p in self.creases]
 
     def _fold(self, u):
         return sum(a * math.sin(2 * math.pi * f * u + p) for f, a, p in self.waves)
 
-    def _lying_z(self, t, fold):
-        return self.ground + LYING["clearance_m"] + LYING["stack_m"] * t + 0.5 * LYING["stack_m"] * t * (1 - t) * (0.5 + 0.5 * fold)
+    def _crease(self, u):
+        return sum(a * math.sin(2 * math.pi * f * u + p) for f, a, p in self.creases)
+
+    def _lying_z(self, t, fold, ripple=0.0):
+        """Height of a lying layer: stacked higher towards the heap, with ridges where the folds bunch (never below the
+        clearance above the ground)."""
+        z = self.ground + LYING["clearance_m"] + LYING["stack_m"] * t + 0.5 * LYING["stack_m"] * t * (1 - t) * (0.5 + 0.5 * fold)
+        ridge = (0.5 + 0.5 * fold) * (0.5 + 0.5 * math.sin(2 * math.pi * 4 * t + 2.5 * ripple))
+        return z + LYING["ridge_m"] * math.sqrt(t) * (1 - t) * ridge
 
     def _point_lying(self, u, r, t):
         hx, hy = self.heap
         if t >= 1.0:
             return (hx, hy, self._lying_z(1.0, 0.0))
+        f = self._fold(u)
+        c = self._crease(u)
+        # Pleats wander and change depth round the rim (bunched, not concentric).
         k = LYING["gather"] * (1 - (1 - t) ** 1.5)
+        pleat = math.sin(math.pi * LYING["pleats"] * 2 * t + 1.6 * f + 0.8 * c) ** 2
+        k -= LYING["pleat_depth"] * (0.75 + 0.25 * self._fold(u + 0.5)) * pleat * (1 - t) * min(1.0, 4 * t)
+        k = max(0.0, k)
         x, y = r[0] + (hx - r[0]) * k, r[1] + (hy - r[1]) * k
         dx, dy = x - hx, y - hy
         dist = math.hypot(dx, dy) or 1e-9
-        f = self._fold(u)
-        push = self.folds * LYING["fold_scale"] * (t ** 0.6) * (1 - t) * f
+        push = self.folds * LYING["fold_scale"] * (t ** 0.6) * (1 - t) * (0.5 * f + 0.5 * c)
         x, y = x + dx / dist * push, y + dy / dist * push
         w = smoothstep(0.0, LYING["drop_t"], t)
-        z = r[2] * (1 - w) + self._lying_z(t, self._fold(u + 0.21)) * w
+        z = r[2] * (1 - w) + self._lying_z(t, c, f) * w
         return (x, y, z)
 
     def point(self, u, t):

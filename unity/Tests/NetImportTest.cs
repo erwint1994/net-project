@@ -34,7 +34,8 @@ public static class NetImportTest
     [Serializable] class Derived { public float overall_length_m; public float mouth_width_m; }
     [Serializable] class Dims { public Derived derived; }
     [Serializable] class UnityPart { public Named[] markers; public Named[] mouthPolygon; }
-    [Serializable] class Manifest { public string id; public Head head; public Dims dimensions; public UnityPart unity; }
+    [Serializable] class Netting { public float tile_m; }
+    [Serializable] class Manifest { public string id; public Head head; public Dims dimensions; public UnityPart unity; public Netting net; }
 
     static Vector3 V(float[] p) => new Vector3(p[0], p[1], p[2]);
 
@@ -119,12 +120,15 @@ public static class NetImportTest
                 "LOD1 and LOD2 bags use the far netting, LOD0 the clipped netting");
             Check(far != null && far.renderQueue == (int)RenderQueue.Transparent && far.GetFloat("_ZWrite") == 0f && far.GetFloat("_Cull") == 0f
                   && !far.GetShaderPassEnabled("ShadowCaster"), "far netting: alpha-blended, double-sided, no shadow pass");
+            Check(far != null && far.GetFloat("_BlendModePreserveSpecular") == 0f && !far.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON"),
+                "far netting: highlights scale with the twine (no preserved specular)");
         }
         Check(mats.Where(m => !m.name.StartsWith("NT_Net")).All(m => m.renderQueue == (int)RenderQueue.Geometry), "hardware materials are opaque");
         var netMap = (Texture2D)net.GetTexture(mainTex);
         Check(AssetDatabase.GetAssetPath(netMap).EndsWith("_CoverageMips.asset") && netMap.mipmapCount > 8,
             $"netting uses the coverage-keeping mip chain ({AssetDatabase.GetAssetPath(netMap)}, {netMap.mipmapCount} mips)");
-        Check(Mathf.Abs(net.GetTextureScale(mainTex).x - 1f / 0.0803f) < 0.2f, "netting tiling in metres: " + net.GetTextureScale(mainTex));
+        Check(Mathf.Abs(net.GetTextureScale(mainTex).x - 1f / manifest.net.tile_m) < 0.05f,
+            $"netting tiling in metres: {net.GetTextureScale(mainTex)} (tile {manifest.net.tile_m * 1000f:0.0} mm)");
 
         // Bags: skinned, with the blendshape, shadows per LOD.
         var comp = prefab.GetComponent<NetStudioNet>();
@@ -545,6 +549,40 @@ public static class NetImportTest
         lodGroup.ForceLOD(2);
         Shot("lod2_forced", new Vector3(1.1f, 0.7f, -1f), 3.6f, "bank", whole);
         lodGroup.ForceLOD(-1);
+
+        // Laid flat on a wooden deck (the net by the pod), seen by an angler standing 1.5-4 m off (eye 1.7 m above the deck).
+        n.SetLying(1f);
+        var deck = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        deck.transform.localScale = Vector3.one * 2f;
+        deck.transform.position = new Vector3(0f, n.lyingGroundY, 1.8f);
+        deck.GetComponent<Renderer>().sharedMaterial = Flat(new Color(0.42f, 0.3f, 0.2f), 0.15f);
+        bank.SetActive(false);
+        water.SetActive(false);
+        var head = inst.transform.TransformPoint(n.mouthCentre);
+        foreach (var d in new[] { 1.5f, 2.5f, 4f })
+        {
+            cam.transform.position = head + new Vector3(-0.7f * d, 0f, -0.7f * d) + Vector3.up * (1.7f + n.lyingGroundY);
+            cam.transform.LookAt(head);
+            var tex = Grab(cam, rt);
+            File.WriteAllBytes(Path.Combine(folder, "lying_deck_" + d.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "m.png"), tex.EncodeToPNG());
+            var emptyDeck = Without(() => Grab(cam, rt));
+            var line = $"[NetTest] lying on the deck at {d} m: frame changed {Differs(tex, emptyDeck):P1}";
+            foreach (var force in new[] { 0, 1 })
+            {
+                lodGroup.ForceLOD(force);
+                var forced = Grab(cam, rt);
+                line += $", LOD{force} forced {Differs(forced, emptyDeck):P1}";
+                UnityEngine.Object.DestroyImmediate(forced);
+            }
+
+            lodGroup.ForceLOD(-1);
+            Debug.Log(line);
+            UnityEngine.Object.DestroyImmediate(emptyDeck);
+            UnityEngine.Object.DestroyImmediate(tex);
+        }
+
+        n.SetLying(0f);
+        UnityEngine.Object.DestroyImmediate(deck);
         cam.targetTexture = null;
         UnityEngine.Object.DestroyImmediate(rt);
         Debug.Log("[NetTest] shots saved in " + folder);

@@ -70,7 +70,7 @@ Everything lands in `output\<net id>\`:
 - **Handle:** length (default 1.80 m), one or two sections, joint position, spigot overlap, butt and top diameters,
   rear grip length, front hand position, grip pattern (knurled diamond or ribbed).
 - **Bag:** depth (default 0.90 m), bulge, soft folds, rounding, **hole size in mm** (clear opening, strand edge to
-  strand edge; default 6 mm), twine thickness, diamond or square holes, knotless or knotted, seam tape, netting over the arms.
+  strand edge; default 9 mm), twine thickness (default 1.5 mm), diamond or square holes, knotless or knotted, seam tape, netting over the arms.
 - **Material:** six colours, **wetness** (darker, glossier; material parameters only), roughness.
 - **Quality:** texture size 1024 or 2048, seed (folds and texture variation), GLB on/off, pickup capsule (off by default).
 

@@ -575,6 +575,10 @@ namespace Carp.NetStudio.Editor
             material.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
             material.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
             material.SetFloat("_ZWrite", 0f);
+            // Highlights scale with the twine's coverage. URP's default "preserve specular" adds them at full strength
+            // whatever the alpha, which made the netting a glossy grey sheet (playtest 2026-11-01).
+            material.SetFloat("_BlendModePreserveSpecular", 0f);
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
             material.SetFloat("_AlphaClip", 0f);
             material.SetFloat("_AlphaToMask", 0f);
             material.SetFloat("_Cull", (float)CullMode.Off);
