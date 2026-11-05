@@ -11,6 +11,8 @@ Copied unchanged on 2026-11-01 from the carp game repository (`C:\repos\carp`, b
 | `NET_STUDIO.md` | `docs/design/NET_STUDIO.md` (the main specification) | `55e69c5e250f3a5e71de149766de349128be73a69a2acc745c1152dfe55489e5` |
 | `NET_STUDIO_PROMPT.md` | `docs/design/NET_STUDIO_PROMPT.md` (the launch prompt) | `199331bc4d44fe4e88614826bcd6751d0c8938e1179544cdc7c1100c5f4adeb6` |
 
+Moved since: on 2026-11-05 the game repo moved the studio's spec and launch prompt from `docs/design/` to `docs/studios/net/` (`SPEC.md`, `PROMPT.md`). The snapshots here are unchanged.
+
 Precedence: `NET_STUDIO.md` and the launch prompt over the starter brief where they differ. The starter brief's compact
 folding net is deferred, as the specification says.
 
