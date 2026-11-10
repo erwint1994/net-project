@@ -7,7 +7,7 @@ portable Blender 5.2.3, Unity 6000.4.10f1 with URP 17.4.0, RTX 4060).
 
 | Area | State |
 | --- | --- |
-| Presets | `net_42_one_piece`, `net_42_two_piece`, `net_46_one_piece`, `net_46_two_piece`, all from shared parts |
+| Presets | `net_42_one_piece`, `net_42_two_piece`, `net_46_one_piece`, `net_46_two_piece`, all from shared parts; `net_60_sturgeon_knotless` (2026-11-10, carp F50 ST9: 60" arms on 14/10 mm, 2 m two-piece handle, 1.3 m deep bag of 6 mm knotless mesh; `studio.cli check` passes, not generated yet, not in the game) |
 | Geometry | tapered twill-carbon arms (bowed, in sockets with anodised ferrules), moulded spreader block with threaded rear boss, plastic tip caps, braided rim cord, carbon handle with a knurled rubber grip, rubber butt cap and a threaded insert; two-piece: joint ferrule collar, hidden spigot, upper-section ring |
 | Bag | hanging, rounded, soft folds, attached all round the rim, netting wrapped over the arms and cord, back seam tape; UVs unwrapped for real twine length (median 1.000, 90 % of edges within 0.92-1.20) |
 | Netting | 9 mm knotless diamond holes, 1.5 mm twine (configurable; square holes and knots optional), alpha-clipped and double-sided in Blender, GLB and Unity |

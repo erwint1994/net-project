@@ -1,0 +1,19 @@
+{
+  "id": "net_60_sturgeon_knotless",
+  "name": "60-inch knotless sturgeon net, two-piece handle",
+  "head": {
+    "arm_length_in": 60,
+    "arm_base_diameter_mm": 14.0,
+    "arm_tip_diameter_mm": 10.0
+  },
+  "handle": {
+    "length_m": 2.0,
+    "sections": 2
+  },
+  "bag": {
+    "depth_m": 1.3,
+    "hole_mm": 6.0,
+    "strand_mm": 1.2,
+    "knot": "knotless"
+  }
+}
